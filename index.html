@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🃏 BALATRO_CHESS // RUN:01</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=VT323&family=Impact&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="balatro-wrapper">
+        
+        <!-- LEFT CONTROL COLUMN: STACK MODIFIERS -->
+        <aside class="balatro-sidebar">
+            <div class="balatro-card brand-card">
+                <h1 class="balatro-logo">CHESS</h1>
+                <div class="edition-badge">PSYCHEDELIC EDITION</div>
+            </div>
+
+            <div class="balatro-card match-settings">
+                <div class="card-label">OPPONENT MODIFIER</div>
+                <div class="btn-stack">
+                    <button id="modePVP" class="balatro-btn active" onclick="changeMode('PVP')">👥 LOCAL MULTI</button>
+                    <button id="modeCPU" class="balatro-btn" onclick="changeMode('CPU')">🤖 CYBER BOT</button>
+                </div>
+            </div>
+
+            <div id="cpuSubPanel" class="balatro-card difficulty-card hidden">
+                <div class="card-label">BOT ANTE DIFFICULTY</div>
+                <div class="select-container">
+                    <select id="botLevel" class="balatro-select" onchange="changeDifficulty()">
+                        <option value="1">🃏 ANTE 01: BLIND RANDOM</option>
+                        <option value="2" selected>🃏 ANTE 02: GREEDY CAPTURE</option>
+                        <option value="3">🃏 ANTE 03: MINIMAX LOOKAHEAD</option>
+                    </select>
+                </div>
+            </div>
+
+            <button class="balatro-btn reset-btn" onclick="initPerfectChessMatch()">🃏 REROLL DECK (RESET)</button>
+        </aside>
+
+        <!-- CENTER COLUMN: CORE CHESS GRID -->
+        <main class="main-table-well">
+            <div class="turn-telemetry-badge">
+                <span class="lbl">ACTIVE MULTIPLIER:</span>
+                <span id="turnLabel" class="val text-white">WHITE TURN</span>
+            </div>
+
+            <div class="crt-screen-container">
+                <div id="chessBoardGrid" class="balatro-board"></div>
+            </div>
+        </main>
+
+        <!-- RIGHT COLUMN: CHRONICLE LOG RUNS -->
+        <section class="balatro-sidebar terminal-sidebar">
+            <div class="balatro-card run-info">
+                <div class="stat-row">
+                    <span class="stat-name">MATCH STATUS</span>
+                    <span id="gameStatusIndicator" class="stat-val status-green">STABLE</span>
+                </div>
+            </div>
+            <div class="balatro-card log-card">
+                <div class="card-label">RUN LOG FEED</div>
+                <div id="logStream" class="log-stream-inner"></div>
+            </div>
+        </section>
+
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

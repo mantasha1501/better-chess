@@ -1,0 +1,283 @@
+:root {
+    --bg-dark: #12131C;
+    --felt-green: #1C352D;
+    --neon-red: #FF3B5C;
+    --neon-blue: #3B82F6;
+    --neon-gold: #F59E0B;
+    --neon-green: #10B981;
+    --card-bg: #1E2030;
+    --card-border: #3A3F58;
+    --text-light: #F3F4F6;
+    
+    --font-impact: 'Impact', sans-serif;
+    --font-crt: 'VT323', monospace;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    background-color: var(--bg-dark);
+    background-image: 
+        radial-gradient(circle at 20% 30%, rgba(255, 59, 92, 0.1) 0%, transparent 40%),
+        radial-gradient(circle at 80% 70%, rgba(16, 185, 129, 0.1) 0%, transparent 40%),
+        linear-gradient(180deg, #12131C 0%, #090A0F 100%);
+    color: var(--text-light);
+    font-family: var(--font-crt);
+    font-size: 18px;
+    letter-spacing: 0.5px;
+    min-height: 100vh;
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* BALATRO FLEXIBLE ROGUELIKE RESPONSIVE LAYOUT */
+.balatro-wrapper {
+    width: 100%;
+    max-width: 1140px;
+    display: grid;
+    grid-template-columns: 280px 1fr 260px;
+    gap: 20px;
+}
+
+/* CHUNKY HEAVILY DROPSHADOWED RETRO CARDS */
+.balatro-card {
+    background: var(--card-bg);
+    border: 3px solid var(--card-border);
+    border-radius: 12px;
+    padding: 16px;
+    box-shadow: 6px 6px 0px rgba(0, 0, 0, 0.5);
+    margin-bottom: 16px;
+    transform: rotate(-1deg);
+}
+.balatro-card:nth-child(even) {
+    transform: rotate(1deg);
+}
+
+.brand-card {
+    background: linear-gradient(135deg, var(--neon-red) 0%, #B91C1C 100%);
+    border-color: #FFFFFF;
+    text-align: center;
+}
+
+.balatro-logo {
+    font-family: var(--font-impact);
+    font-size: 44px;
+    color: #FFFFFF;
+    text-shadow: 3px 3px 0px #000;
+    font-style: italic;
+    letter-spacing: 2px;
+}
+
+.edition-badge {
+    background: #000000;
+    color: var(--neon-gold);
+    font-size: 14px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    display: inline-block;
+    margin-top: 4px;
+    font-weight: bold;
+}
+
+.card-label {
+    color: #9CA3AF;
+    font-size: 14px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+    border-bottom: 1px dashed var(--card-border);
+    padding-bottom: 4px;
+}
+
+/* BUTTONS INTERFACES */
+.btn-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.balatro-btn {
+    background: #2D3149;
+    border: 2px solid #4B527A;
+    color: #FFFFFF;
+    font-family: var(--font-crt);
+    font-size: 18px;
+    padding: 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.1s ease;
+    box-shadow: 3px 3px 0px #000;
+}
+.balatro-btn:active {
+    transform: translate(2px, 2px);
+    box-shadow: 1px 1px 0px #000;
+}
+.balatro-btn.active {
+    background: var(--neon-blue);
+    border-color: #93C5FD;
+}
+
+.reset-btn {
+    background: var(--neon-gold);
+    color: #000;
+    font-weight: bold;
+    text-align: center;
+    width: 100%;
+}
+
+.balatro-select {
+    width: 100%;
+    background: #2D3149;
+    border: 2px solid #4B527A;
+    color: #FFFFFF;
+    font-family: var(--font-crt);
+    font-size: 16px;
+    padding: 8px;
+    border-radius: 6px;
+    outline: none;
+}
+
+.hidden { display: none !important; }
+
+/* CENTER ROW: BOARD WINDOW */
+.main-table-well {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    min-width: 0; /* Prevents flex items from expanding beyond parent boundaries */
+}
+
+.turn-telemetry-badge {
+    background: #000000;
+    border: 2px solid var(--neon-red);
+    padding: 8px 24px;
+    border-radius: 30px;
+    font-size: 24px;
+    box-shadow: 0 0 15px rgba(255, 59, 92, 0.3);
+    text-align: center;
+}
+.turn-telemetry-badge .lbl { color: #6B7280; margin-right: 8px; }
+.text-white { color: #FFFFFF !important; }
+.text-neon { color: var(--neon-red) !important; }
+
+/* CRT SHADER BOX ENVELOPE */
+.crt-screen-container {
+    background: var(--felt-green);
+    border: 6px solid #4F554A;
+    border-radius: 16px;
+    padding: 8px;
+    box-shadow: 0px 20px 40px rgba(0,0,0,0.6), inset 0 0 40px rgba(0,0,0,0.8);
+    width: 100%;
+    max-width: 500px;
+    box-sizing: border-box;
+}
+
+/* FIX: PERFECT SQUARE ENFORCEMENT TECHNIQUE FOR MOBILE VIEWPORTS */
+.balatro-board {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    grid-template-rows: repeat(8, 1fr);
+    width: 100%;
+    height: auto;
+    aspect-ratio: 1 / 1; /* Enforces clean square logic in modern mobile devices */
+    border: 2px solid #000;
+}
+
+/* HIGHCONTRAST TILES AND GLYPHS */
+.b-tile {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    cursor: pointer;
+}
+.b-tile.light-sq { background-color: #26473B; }
+.b-tile.dark-sq { background-color: #172D25; }
+
+.b-tile.selected {
+    background-color: rgba(245, 158, 11, 0.4) !important;
+}
+.b-tile.valid-move::after {
+    content: '';
+    position: absolute;
+    width: 24%;
+    height: 24%;
+    background-color: var(--neon-green);
+    border-radius: 50%;
+    box-shadow: 0 0 8px var(--neon-green);
+}
+.b-tile.valid-move.is-cap::after {
+    width: 80%;
+    height: 80%;
+    background: transparent;
+    border: 3px solid var(--neon-red);
+    border-radius: 6px;
+    box-shadow: 0 0 8px var(--neon-red);
+}
+
+/* Chess Glyphs Scaling Adaptation */
+.piece {
+    font-size: min(8vw, 38px); /* Scales dynamically with phone screen widths */
+    z-index: 5;
+    user-select: none;
+    line-height: 1;
+}
+.piece.w-team { color: #FFFFFF; filter: drop-shadow(0 2px 3px rgba(0,0,0,0.8)); }
+.piece.b-team { color: #FF3B5C; filter: drop-shadow(0 2px 3px rgba(0,0,0,0.8)); }
+
+/* LOG WELL FEED */
+.stat-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 20px;
+}
+.status-green { color: var(--neon-green); font-weight: bold; }
+.status-red { color: var(--neon-red); font-weight: bold; animation: blink 1s infinite; }
+
+@keyframes blink {
+    50% { opacity: 0.3; }
+}
+
+.log-card { flex-grow: 1; }
+.log-stream-inner {
+    height: 200px;
+    overflow-y: auto;
+    font-size: 16px;
+    line-height: 1.4;
+    color: #A1A1AA;
+}
+.log-line { border-bottom: 1px solid #27272A; padding: 4px 0; }
+.log-line.w { color: #FFF; }
+.log-line.b { color: var(--neon-red); }
+
+/* PHONE RESPONSIVE VIEWPORT BREAKPOINTS OVERRIDE */
+@media (max-width: 900px) {
+    body {
+        padding: 8px;
+        align-items: flex-start;
+    }
+    .balatro-wrapper {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+    .balatro-card { 
+        transform: none !important; 
+        margin-bottom: 0;
+    }
+    .log-stream-inner {
+        height: 140px;
+    }
+    .crt-screen-container { 
+        max-width: 100%;
+        width: 100%;
+    }
+}
