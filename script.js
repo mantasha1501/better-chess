@@ -1,6 +1,6 @@
 /**
  * BALATRO CHESS ENGINE // POSITIONAL ENGINE & DEEP MINIMAX ALTERNATIVE
- * Fully compliant chess logic with Alpha-Beta structural evaluation layers.
+ * Fully compliant chess logic with Shuffled Alpha-Beta structural evaluation layers.
  */
 
 let board = [];
@@ -13,6 +13,13 @@ let botThinking = false;
 
 let kingPositions = { w: {r: 7, c: 4}, b: {r: 0, c: 4} };
 
+// Tracking elements for special historical rule mechanics
+let castlingRights = {
+    w: { kingSide: true, queenSide: true },
+    b: { kingSide: true, queenSide: true }
+};
+let enPassantTarget = null; 
+
 const glyphs = {
     'wP': '♙', 'wR': '♖', 'wN': '♘', 'wB': '♗', 'wQ': '♕', 'wK': '♔',
     'bP': '♟', 'bR': '♜', 'bN': '♞', 'bB': '♝', 'bQ': '♛', 'bK': '♚'
@@ -23,8 +30,6 @@ const pieceValues = { 'P': 100, 'N': 320, 'B': 330, 'R': 500, 'Q': 900, 'K': 200
 
 /**
  * PIECE-SQUARE POSITION MATRIX TABLES (PST)
- * Dictates structural chess value mappings (Center control, developmental safety).
- * Grid arrays mirror White coordinates natively; flipped dynamically for Black.
  */
 const pawnPST = [
     [0,  0,  0,  0,  0,  0,  0,  0],
@@ -112,6 +117,11 @@ function initPerfectChessMatch() {
     activeLegalMoves = [];
     botThinking = false;
     kingPositions = { w: {r: 7, c: 4}, b: {r: 0, c: 4} };
+    castlingRights = {
+        w: { kingSide: true, queenSide: true },
+        b: { kingSide: true, queenSide: true }
+    };
+    enPassantTarget = null;
 
     board = [
         ['bR', 'bN', 'bB', 'bQ', 'bK', 'bB', 'bN', 'bR'],
@@ -166,7 +176,7 @@ function renderBoard() {
             const targetMove = activeLegalMoves.find(m => m.to.r === r && m.to.c === c);
             if (targetMove) {
                 tile.classList.add("valid-move");
-                if (p) tile.classList.add("is-cap");
+                if (p || targetMove.isEnPassant) tile.classList.add("is-cap");
             }
 
             tile.onclick = () => onSquareClick(r, c);
@@ -198,6 +208,9 @@ function onSquareClick(r, c) {
 }
 
 function getStrictLegalMoves(r, c, targetBoard, alliance) {
+    const p = targetBoard[r][c];
+    if (!p) return [];
+
     const rawMoves = getRawPieceTrajectories(r, c, targetBoard);
     let strictMoves = [];
 
@@ -215,6 +228,47 @@ function getStrictLegalMoves(r, c, targetBoard, alliance) {
             strictMoves.push(m);
         }
     });
+
+    // Handle special rule logic filters on the active matching board
+    if (targetBoard === board) {
+        if (p[1] === 'K') {
+            const kingPos = kingPositions[alliance];
+            if (!isKingThreatenedInPosition(kingPos, targetBoard, alliance)) {
+                const rights = castlingRights[alliance];
+                // King side castling
+                if (rights.kingSide && !targetBoard[r][5] && !targetBoard[r][6]) {
+                    if (!isKingThreatenedInPosition({r, c: 5}, targetBoard, alliance) && !isKingThreatenedInPosition({r, c: 6}, targetBoard, alliance)) {
+                        strictMoves.push({ from: {r, c}, to: {r, c: 6}, isCastling: "king" });
+                    }
+                }
+                // Queen side castling
+                if (rights.queenSide && !targetBoard[r][1] && !targetBoard[r][2] && !targetBoard[r][3]) {
+                    if (!isKingThreatenedInPosition({r, c: 2}, targetBoard, alliance) && !isKingThreatenedInPosition({r, c: 3}, targetBoard, alliance)) {
+                        strictMoves.push({ from: {r, c}, to: {r, c: 2}, isCastling: "queen" });
+                    }
+                }
+            }
+        }
+
+        if (p[1] === 'P' && enPassantTarget) {
+            const dir = alliance === 'w' ? -1 : 1;
+            if (r === enPassantTarget.r && Math.abs(c - enPassantTarget.c) === 1) {
+                let m = { 
+                    from: {r, c}, 
+                    to: {r: r + dir, c: enPassantTarget.c}, 
+                    isEnPassant: true, 
+                    capturedPawnPos: {r: enPassantTarget.r, c: enPassantTarget.c} 
+                };
+                let virtualBoard = targetBoard.map(row => [...row]);
+                virtualBoard[m.to.r][m.to.c] = virtualBoard[m.from.r][m.from.c];
+                virtualBoard[m.from.r][m.from.c] = null;
+                virtualBoard[m.capturedPawnPos.r][m.capturedPawnPos.c] = null;
+                if (!isKingThreatenedInPosition(kingPositions[alliance], virtualBoard, alliance)) {
+                    strictMoves.push(m);
+                }
+            }
+        }
+    }
 
     return strictMoves;
 }
@@ -307,18 +361,59 @@ function getAllTeamMoves(targetBoard, team) {
 function executeMove(m) {
     const p = board[m.from.r][m.from.c];
     const cap = board[m.to.r][m.to.c];
+    let nextEnPassantTarget = null;
 
-    board[m.to.r][m.to.c] = p;
-    board[m.from.r][m.from.c] = null;
+    if (m.isCastling) {
+        board[m.to.r][m.to.c] = p;
+        board[m.from.r][m.from.c] = null;
+        if (m.isCastling === "king") {
+            board[m.to.r][5] = p[0] + 'R';
+            board[m.to.r][7] = null;
+        } else {
+            board[m.to.r][3] = p[0] + 'R';
+            board[m.to.r][0] = null;
+        }
+    } else if (m.isEnPassant) {
+        board[m.to.r][m.to.c] = p;
+        board[m.from.r][m.from.c] = null;
+        board[m.capturedPawnPos.r][m.capturedPawnPos.c] = null;
+    } else {
+        if (p[1] === 'P' && Math.abs(m.to.r - m.from.r) === 2) {
+            nextEnPassantTarget = { r: m.to.r, c: m.to.c };
+        }
+        board[m.to.r][m.to.c] = p;
+        board[m.from.r][m.from.c] = null;
+    }
 
-    if (p[1] === 'K') kingPositions[p[0]] = { r: m.to.r, c: m.to.c };
+    if (p[1] === 'K') {
+        kingPositions[p[0]] = { r: m.to.r, c: m.to.c };
+        castlingRights[p[0]].kingSide = false;
+        castlingRights[p[0]].queenSide = false;
+    }
+
+    if (p[1] === 'R') {
+        if (m.from.r === (p[0] === 'w' ? 7 : 0)) {
+            if (m.from.c === 7) castlingRights[p[0]].kingSide = false;
+            if (m.from.c === 0) castlingRights[p[0]].queenSide = false;
+        }
+    }
+
+    if (cap && cap[1] === 'R') {
+        const opp = p[0] === 'w' ? 'b' : 'w';
+        if (m.to.r === (opp === 'w' ? 7 : 0)) {
+            if (m.to.c === 7) castlingRights[opp].kingSide = false;
+            if (m.to.c === 0) castlingRights[opp].queenSide = false;
+        }
+    }
 
     if (p[1] === 'P' && (m.to.r === 0 || m.to.r === 7)) {
         board[m.to.r][m.to.c] = p[0] + 'Q';
     }
 
+    enPassantTarget = nextEnPassantTarget;
+
     const files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
-    addLog(`${p[0].toUpperCase()} : ${p[1] !== 'P' ? p[1] : ''}${files[m.from.c]}${8 - m.from.r} ➔ ${files[m.to.c]}${8 - m.to.r}${cap ? ' ✕' : ''}`, p[0]);
+    addLog(`${p[0].toUpperCase()} : ${p[1] !== 'P' ? p[1] : ''}${files[m.from.c]}${8 - m.from.r} ➔ ${files[m.to.c]}${8 - m.to.r}${cap || m.isEnPassant ? ' ✕' : ''}`, p[0]);
 
     turn = turn === 'w' ? 'b' : 'w';
     selectedSquare = null;
@@ -353,9 +448,6 @@ function executeMove(m) {
     }
 }
 
-// ==========================================================================
-// FIX: REPLACES OLD runBotPipeline() TO PREVENT REPETITIVE BOT OPENINGS
-// ==========================================================================
 function runBotPipeline() {
     botThinking = true;
     document.getElementById("gameStatusIndicator").innerText = "BOT COMPUTING LINES...";
@@ -375,17 +467,14 @@ function runBotPipeline() {
         let bestScore = -Infinity;
         let optimalMovesPool = [];
 
-        // 1. Shuffles the primary index arrays to randomize raw evaluation order
         availableMoves.sort(() => Math.random() - 0.5);
 
-        // 2. Prioritizes sorting lookahead capture strings to keep alpha-beta pruning fast
         availableMoves.sort((a, b) => {
             let scoreA = board[a.to.r][a.to.c] ? pieceValues[board[a.to.r][a.to.c][1]] : 0;
             let scoreB = board[b.to.r][b.to.c] ? pieceValues[board[b.to.r][b.to.c][1]] : 0;
             return scoreB - scoreA;
         });
 
-        // 3. Main mathematical evaluation passes
         availableMoves.forEach(m => {
             let virtualBoard = board.map(row => [...row]);
             let savedKingPos = { ...kingPositions.b };
@@ -397,16 +486,14 @@ function runBotPipeline() {
 
             let score = minimax(virtualBoard, searchDepth - 1, alpha, beta, false);
             
-            // 4. Inject artificial delta shifts based on Ante difficulty to emulate human choice
             if (botDifficulty === 1) {
-                score += (Math.floor(Math.random() * 60) - 30); // Loose random variance
+                score += (Math.floor(Math.random() * 60) - 30);
             } else if (botDifficulty === 2) {
-                score += (Math.floor(Math.random() * 16) - 8);   // Minor positional whim
+                score += (Math.floor(Math.random() * 16) - 8);
             }
 
             kingPositions.b = savedKingPos;
 
-            // 5. Gather equally optimal moves instead of defaulting to the first index
             if (score > bestScore) {
                 bestScore = score;
                 optimalMovesPool = [m]; 
@@ -418,7 +505,6 @@ function runBotPipeline() {
 
         botThinking = false;
         
-        // 6. Random selection out of the top-performing branches
         if (optimalMovesPool.length > 0) {
             let finalizedChoice = optimalMovesPool[Math.floor(Math.random() * optimalMovesPool.length)];
             executeMove(finalizedChoice);
@@ -434,7 +520,7 @@ function minimax(vBoard, depth, alpha, beta, isMaximizing) {
     if (isMaximizing) {
         let maxEval = -Infinity;
         let moves = getAllTeamMoves(vBoard, 'b');
-        if (moves.length === 0) return -10000; // Checkmate/stalemate penalization
+        if (moves.length === 0) return -10000;
 
         for (let i = 0; i < moves.length; i++) {
             let virtual = vBoard.map(row => [...row]);
@@ -449,7 +535,7 @@ function minimax(vBoard, depth, alpha, beta, isMaximizing) {
             
             maxEval = Math.max(maxEval, evaluation);
             alpha = Math.max(alpha, evaluation);
-            if (beta <= alpha) break; // Alpha Beta Cutoff
+            if (beta <= alpha) break;
         }
         return maxEval;
     } else {
@@ -470,19 +556,14 @@ function minimax(vBoard, depth, alpha, beta, isMaximizing) {
 
             minEval = Math.min(minEval, evaluation);
             beta = Math.min(beta, evaluation);
-            if (beta <= alpha) break; // Alpha Beta Cutoff
+            if (beta <= alpha) break;
         }
         return minEval;
     }
 }
 
-/**
- * FULL EVALUATION ENGINE MATRIX
- * Combines standard Material calculation values with Piece-Square Tables (PST) positional weights.
- */
 function evaluateCompleteBoard(vBoard) {
     let totalScore = 0;
-
     for (let r = 0; r < 8; r++) {
         for (let c = 0; c < 8; c++) {
             const p = vBoard[r][c];
@@ -490,12 +571,9 @@ function evaluateCompleteBoard(vBoard) {
 
             const side = p[0];
             const type = p[1];
-            
-            // Material Base Scoring Calculation
             let val = pieceValues[type] || 0;
-            
-            // Positional Grid Modifications
             let positionalBonus = 0;
+            
             if (type === 'P') positionalBonus = pawnPST[side === 'w' ? r : 7 - r][c];
             else if (type === 'N') positionalBonus = knightPST[side === 'w' ? r : 7 - r][c];
             else if (type === 'B') positionalBonus = bishopPST[side === 'w' ? r : 7 - r][c];
@@ -504,13 +582,8 @@ function evaluateCompleteBoard(vBoard) {
             else if (type === 'K') positionalBonus = kingPST[side === 'w' ? r : 7 - r][c];
 
             let cumulative = val + positionalBonus;
-            
-            // Black maximizes totalScore, White minimizes it
-            if (side === 'b') {
-                totalScore += cumulative;
-            } else {
-                totalScore -= cumulative;
-            }
+            if (side === 'b') totalScore += cumulative;
+            else totalScore -= cumulative;
         }
     }
     return totalScore;

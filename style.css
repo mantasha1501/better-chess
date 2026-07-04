@@ -151,7 +151,7 @@ body {
     flex-direction: column;
     align-items: center;
     gap: 16px;
-    min-width: 0; /* Prevents flex items from expanding beyond parent boundaries */
+    min-width: 0;
 }
 
 .turn-telemetry-badge {
@@ -179,14 +179,14 @@ body {
     box-sizing: border-box;
 }
 
-/* FIX: PERFECT SQUARE ENFORCEMENT TECHNIQUE FOR MOBILE VIEWPORTS */
+/* ENFORCED MOBILE PERFECT 1:1 SQUARE SIZES */
 .balatro-board {
     display: grid;
     grid-template-columns: repeat(8, 1fr);
     grid-template-rows: repeat(8, 1fr);
     width: 100%;
     height: auto;
-    aspect-ratio: 1 / 1; /* Enforces clean square logic in modern mobile devices */
+    aspect-ratio: 1 / 1; 
     border: 2px solid #000;
 }
 
@@ -226,7 +226,7 @@ body {
 
 /* Chess Glyphs Scaling Adaptation */
 .piece {
-    font-size: min(8vw, 38px); /* Scales dynamically with phone screen widths */
+    font-size: min(8vw, 38px);
     z-index: 5;
     user-select: none;
     line-height: 1;
